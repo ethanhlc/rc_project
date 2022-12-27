@@ -1,11 +1,15 @@
 # Send Kakao MSG if temp detected
 # Sound alarm
 
+from os import write
+from threading import Semaphore
 import RPi.GPIO as GPIO
 import spidev
 import time
 import json
 import requests
+import pymysql
+from picamera import PiCamera
 
 # Setup Code
 # Pin Setup
@@ -24,8 +28,35 @@ spi = spidev.SpiDev()
 spi.open(0, 0)
 spi.max_speed_hz = 1_000_000
 
+# Setup DB
+db = None
+cur = None
+
+db = pymysql.connect(host='127.0.0.1', user='root', password='12345678', db='mysql', charset='utf8')
+
+# Setup PiCamera
+cam = PiCamera()
+
 
 # Function Defn
+# Take Photo
+def take_photo():
+    img_file_path = '/home/raspberry/rc_project/flask/static/stream_img.jpg'
+    cam.capture(img_file_path)
+
+# Wrie to DB
+def write_db(temp, alarm):
+    if alarm == 0:
+        state = "'OK'"
+    elif alarm == 1:
+        state = "'ALERT'"
+    cur = db.cursor()
+    sql_insert = 'INSERT INTO sec_status (state, temp) VALUES (%s, %.2f)' % (state, temp)
+    print(sql_insert)
+    cur.execute(sql_insert)
+    db.commit()
+
+
 # Read Temp
 def temp_read(channel):
     r = spi.xfer2([1, (0x08 + channel) << 4, 0])
@@ -33,6 +64,7 @@ def temp_read(channel):
     voltage = adc_out * (3.3 / 1023) * 1000
     temperature = voltage / 10.0
 
+    # write_db(temperature, alarm_state)
     print(temperature)
     return temperature
 
@@ -81,17 +113,34 @@ def alarm_led():
 
 
 alarm_state = 0
+count = 0
 
 try:
     while True:
-        if alarm_state == 0:
-            if temp_read(SENSOR_PIN) > 30:
-                alarm_state = 1
-                # send_msg()      # send kakao msg
-        else:
-            alarm_led()     # ring buzzer
+        temp = temp_read(SENSOR_PIN)
 
+        if temp > 30:
+            alarm_state = 1
+            # send_msg()          # send kakao msg
+        if alarm_state == 1:
+            alarm_led()
+
+        if not (count % 5):
+            write_db(temp, alarm_state)
+            take_photo()
+
+        count += 1
         time.sleep(1)
+
+        # if alarm_state == 0:
+        #     if temp_read(SENSOR_PIN) > 30:
+        #         alarm_state = 1
+        #         # send_msg()      # send kakao msg
+        # else:
+        #     alarm_led()     # ring buzzer
+        #     temp_read(SENSOR_PIN)
+
+        # time.sleep(1)
 
 except KeyboardInterrupt:
     print('\nSTOP')
@@ -101,3 +150,4 @@ finally:
     spi.close()
     buzz.stop()
     GPIO.cleanup()
+    cam.close()
