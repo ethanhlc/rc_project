@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="refresh" content="3">
+    <title>Security Monitor</title>
+    <style>
+        .center_img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 50%;
+        }
+
+        .status_text {
+            width: 50%;
+            text-align: center;
+            font-size: large;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 style="text-align: center; margin-bottom: 20px;">Security Stream</h1>
+
+    <table cellspacing="10" style="width: 80%; margin-left: auto; margin-right: auto;">
+        <tr>
+            <img class="center_img" src="static/stream_img.jpg">
+        </tr>
+        <tr>
+            <td class="status_text">Status: {{ state }}</td>
+            <td class="status_text">Temperature: {{ temp }}</td>
+        </tr>
+    </table>
+</body>
+
+</html>
