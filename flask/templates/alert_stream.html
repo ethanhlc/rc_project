@@ -20,18 +20,21 @@
     </style>
 </head>
 
-<body>
+<body style="background-color: yellow;">
     <h1 style="text-align: center; margin-bottom: 20px;">Security Stream</h1>
 
-    <table cellspacing="10" style="width: 80%; margin-left: auto; margin-right: auto;">
+    <table cellspacing="10" style="width: 90%; margin-left: auto; margin-right: auto;">
         <tr>
-            <img class="center_img" src="{{ url_for('video_feed') }}">
+            <img class="center_img" src="/static/stream_img.jpg">
         </tr>
         <tr>
             <td class="status_text" style="text-align: right;">Status: {{ state }}</td>
             <td class="status_text" style="text-align: left;">Temperature: {{ temp }}</td>
         </tr>
     </table>
+    <center>
+        <a href="/deactivate" style="font-size: xx-large; margin-left: auto; margin-right: auto;">Deactivate Alarm</a>
+    </center>
 </body>
 
 </html>

@@ -1,6 +1,3 @@
-# Send Kakao MSG if temp detected
-# Sound alarm
-
 from os import write
 from threading import Semaphore
 import RPi.GPIO as GPIO
@@ -9,7 +6,6 @@ import time
 import json
 import requests
 import pymysql
-from picamera import PiCamera
 
 # Setup Code
 # Pin Setup
@@ -34,17 +30,27 @@ cur = None
 
 db = pymysql.connect(host='127.0.0.1', user='root', password='12345678', db='mysql', charset='utf8')
 
-# Setup PiCamera
-cam = PiCamera()
-
 
 # Function Defn
-# Take Photo
-def take_photo():
-    img_file_path = '/home/raspberry/rc_project/flask/static/stream_img.jpg'
-    cam.capture(img_file_path)
+# Read DB alert_off
+def check_alert():
+    # DB connection
+    db = pymysql.connect(host='127.0.0.1', user='root', password='12345678',
+                         db='mysql', charset='utf8')
+    cur = db.cursor()
+    sql_read = 'SELECT alarm FROM alert_off ORDER BY time DESC LIMIT 1'
+    cur.execute(sql_read)
+    result = cur.fetchall()
+    result = result[0]
+    print(result)
 
-# Wrie to DB
+    if result[0] == 'Y':
+        return 1
+    else:
+        return 0
+
+
+# Write to DB
 def write_db(temp, alarm):
     if alarm == 0:
         state = "'OK'"
@@ -105,11 +111,14 @@ def send_msg():
 
 # Ring Alarm
 def alarm_led():
+    global alarm_state
     buzz.start(10)
     GPIO.output(LED_PIN, True)
     time.sleep(0.5)
     buzz.stop()
     GPIO.output(LED_PIN, False)
+    if check_alert() == 1:
+        alarm_state = 0
 
 
 alarm_state = 0
@@ -127,7 +136,7 @@ try:
 
         if not (count % 5):
             write_db(temp, alarm_state)
-            take_photo()
+            # take_photo()
 
         count += 1
         time.sleep(1)
@@ -150,4 +159,3 @@ finally:
     spi.close()
     buzz.stop()
     GPIO.cleanup()
-    cam.close()
