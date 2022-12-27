@@ -9,13 +9,13 @@ import requests
 
 # Setup Code
 # Pin Setup
-TEMP_PIN = 3
+SENSOR_PIN = 5
 BUZZER_PIN = 4
-LED_R_PIN = 2
+LED_PIN = 3
 
 # Setup GPIO
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(LED_R_PIN, GPIO.OUT)
+GPIO.setup(LED_PIN, GPIO.OUT, initial=False)
 GPIO.setup(BUZZER_PIN, GPIO.OUT)
 buzz = GPIO.PWM(BUZZER_PIN, 100)    # change duty to adjust volume
 
@@ -40,7 +40,9 @@ def temp_read(channel):
 # Send Kakao MSG
 def send_msg():
     # User Token
-    usr_token = "zoPSqzZP81dswlWQ1KS9hM9T1vszRqaOf0KvBjdzCj11WgAAAYVOZE1_"
+    usr_token = "WSfKWpGwGYcyDDfcvziVdJHNYF0pv4SLqrOIP1VKCilv1QAAAYVRPGtk"
+
+    now = time.strftime('%x %X', time.localtime())
 
     url = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
 
@@ -52,13 +54,13 @@ def send_msg():
     data = {
         "template_object": json.dumps({
             "object_type": "text",
-            "text": "Intruder Detected!!",
+            "text": "Intruder Detected!!\n" + now,
             "link": {
                 "web_url": "https://www.google.com",
                 "mobile_web_url": "https://www.google.com"
             }
         })
-     }
+    }
 
     # send kakao msg
     response = requests.post(url, headers=headers, data=data)
@@ -72,10 +74,10 @@ def send_msg():
 # Ring Alarm
 def alarm_led():
     buzz.start(10)
-    GPIO.output(LED_R_PIN, True)
+    GPIO.output(LED_PIN, True)
     time.sleep(0.5)
     buzz.stop()
-    GPIO.output(LED_R_PIN, False)
+    GPIO.output(LED_PIN, False)
 
 
 alarm_state = 0
@@ -83,7 +85,7 @@ alarm_state = 0
 try:
     while True:
         if alarm_state == 0:
-            if temp_read(TEMP_PIN) > 30:
+            if temp_read(SENSOR_PIN) > 30:
                 alarm_state = 1
                 # send_msg()      # send kakao msg
         else:
