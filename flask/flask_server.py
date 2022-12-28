@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 from flask import Flask, render_template, Response
 import pymysql
 import cv2
@@ -18,6 +19,7 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
 
+# Create video_feed
 def video_stream():
     while True:
         _, frame = cap.read()
@@ -29,6 +31,7 @@ def video_stream():
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
+# Capture Screen when Intruder Detected
 def capture_screen():
     global run_once
     if run_once == 0:
@@ -47,7 +50,7 @@ def security_stream():
     cur.execute(sql_read)
     result = cur.fetchall()
     result = result[0]
-    # if alert, change background to red
+    # if alert, change background to yellow
     if result[0] == 'ALERT':
         capture_screen()
         return render_template('alert_stream.html',
@@ -59,6 +62,7 @@ def security_stream():
                            state=result[0], temp=result[1])
 
 
+# Deactivate Alarm & save alarm status to alert_off table
 @app.route('/deactivate')
 def deactivate():
     sql_deactivate = "INSERT INTO alert_off (alarm) VALUES ('Y')"
@@ -76,7 +80,6 @@ def deactivate():
 
     return render_template('security_stream.html',
                            state=result[0], temp=result[1])
-
 
 
 @app.route('/video_feed')

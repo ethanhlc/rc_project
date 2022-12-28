@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-from os import write
-from threading import Semaphore
 import RPi.GPIO as GPIO
 import spidev
 import time
@@ -19,7 +17,7 @@ LED_PIN = 3
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(LED_PIN, GPIO.OUT, initial=False)
 GPIO.setup(BUZZER_PIN, GPIO.OUT)
-buzz = GPIO.PWM(BUZZER_PIN, 100)  # change duty to adjust volume
+buzz = GPIO.PWM(BUZZER_PIN, 100)
 
 # Setup SPI
 spi = spidev.SpiDev()
@@ -174,7 +172,6 @@ def alarm_led():
         send_alarmdone()
 
 
-
 alarm_state = 0
 count = 0
 
@@ -184,26 +181,15 @@ try:
 
         if temp > 25:
             alarm_state = 1
-            send_msg()          # send kakao msg
+            send_msg()  # send kakao msg
         if alarm_state == 1:
             alarm_led()
 
         if not (count % 3):
             write_db(temp, alarm_state)
-            # take_photo()
 
         count += 1
         time.sleep(1)
-
-        # if alarm_state == 0:
-        #     if temp_read(SENSOR_PIN) > 30:
-        #         alarm_state = 1
-        #         # send_msg()      # send kakao msg
-        # else:
-        #     alarm_led()     # ring buzzer
-        #     temp_read(SENSOR_PIN)
-
-        # time.sleep(1)
 
 except KeyboardInterrupt:
     print("\nSTOP")
