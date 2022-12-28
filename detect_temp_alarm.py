@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from os import write
 from threading import Semaphore
 import RPi.GPIO as GPIO
@@ -17,7 +19,7 @@ LED_PIN = 3
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(LED_PIN, GPIO.OUT, initial=False)
 GPIO.setup(BUZZER_PIN, GPIO.OUT)
-buzz = GPIO.PWM(BUZZER_PIN, 100)    # change duty to adjust volume
+buzz = GPIO.PWM(BUZZER_PIN, 100)  # change duty to adjust volume
 
 # Setup SPI
 spi = spidev.SpiDev()
@@ -28,23 +30,32 @@ spi.max_speed_hz = 1_000_000
 db = None
 cur = None
 
-db = pymysql.connect(host='127.0.0.1', user='root', password='12345678', db='mysql', charset='utf8')
+db = pymysql.connect(
+    host="127.0.0.1", user="root", password="12345678", db="mysql", charset="utf8"
+)
+
+# Clear Wrong Input From Table: alert_off
+cur = db.cursor()
+cur.execute("DELETE FROM alert_off WHERE alarm = 'Y'")
+cur.execute("DELETE FROM sec_status WHERE state = 'ALERT'")
+db.commit()
 
 
 # Function Defn
 # Read DB alert_off
 def check_alert():
     # DB connection
-    db = pymysql.connect(host='127.0.0.1', user='root', password='12345678',
-                         db='mysql', charset='utf8')
+    db = pymysql.connect(
+        host="127.0.0.1", user="root", password="12345678", db="mysql", charset="utf8"
+    )
     cur = db.cursor()
-    sql_read = 'SELECT alarm FROM alert_off ORDER BY time DESC LIMIT 1'
+    sql_read = "SELECT alarm FROM alert_off ORDER BY time DESC LIMIT 1"
     cur.execute(sql_read)
     result = cur.fetchall()
     result = result[0]
     print(result)
 
-    if result[0] == 'Y':
+    if result[0] == "Y":
         return 1
     else:
         return 0
@@ -57,7 +68,10 @@ def write_db(temp, alarm):
     elif alarm == 1:
         state = "'ALERT'"
     cur = db.cursor()
-    sql_insert = 'INSERT INTO sec_status (state, temp) VALUES (%s, %.2f)' % (state, temp)
+    sql_insert = "INSERT INTO sec_status (state, temp) VALUES (%s, %.2f)" % (
+        state,
+        temp,
+    )
     print(sql_insert)
     cur.execute(sql_insert)
     db.commit()
@@ -78,35 +92,37 @@ def temp_read(channel):
 # Send Kakao MSG
 def send_msg():
     # User Token
-    usr_token = "WSfKWpGwGYcyDDfcvziVdJHNYF0pv4SLqrOIP1VKCilv1QAAAYVRPGtk"
+    usr_token = "LWSqum5U2nEmv1_0hB94ll7tKr8TI97oc96ukH3lCj1zmwAAAYVWf_Dx"
 
-    now = time.strftime('%x %X', time.localtime())
+    now = time.strftime("%x %X", time.localtime())
 
     url = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
 
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": "Bearer " + usr_token
+        "Authorization": "Bearer " + usr_token,
     }
 
     data = {
-        "template_object": json.dumps({
-            "object_type": "text",
-            "text": "Intruder Detected!!\n" + now,
-            "link": {
-                "web_url": "https://www.google.com",
-                "mobile_web_url": "https://www.google.com"
+        "template_object": json.dumps(
+            {
+                "object_type": "text",
+                "text": "Intruder Detected!!\n" + now,
+                "link": {
+                    "web_url": "https://www.google.com",
+                    "mobile_web_url": "https://www.google.com",
+                },
             }
-        })
+        )
     }
 
     # send kakao msg
     response = requests.post(url, headers=headers, data=data)
     print(response.status_code)
-    if response.json().get('result_code') == 0:
-        print('Message send succeeded.')
+    if response.json().get("result_code") == 0:
+        print("Message send succeeded.")
     else:
-        print('Message send failed: ' + str(response.json()))
+        print("Message send failed: " + str(response.json()))
 
 
 # Ring Alarm
@@ -128,13 +144,13 @@ try:
     while True:
         temp = temp_read(SENSOR_PIN)
 
-        if temp > 30:
+        if temp > 25:
             alarm_state = 1
-            # send_msg()          # send kakao msg
+            send_msg()          # send kakao msg
         if alarm_state == 1:
             alarm_led()
 
-        if not (count % 5):
+        if not (count % 3):
             write_db(temp, alarm_state)
             # take_photo()
 
@@ -152,7 +168,7 @@ try:
         # time.sleep(1)
 
 except KeyboardInterrupt:
-    print('\nSTOP')
+    print("\nSTOP")
     pass
 
 finally:
