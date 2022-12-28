@@ -125,6 +125,42 @@ def send_msg():
         print("Message send failed: " + str(response.json()))
 
 
+# Send Alarm Deactivated MSG
+def send_alarmdone():
+    # User Token
+    usr_token = "LWSqum5U2nEmv1_0hB94ll7tKr8TI97oc96ukH3lCj1zmwAAAYVWf_Dx"
+
+    now = time.strftime("%x %X", time.localtime())
+
+    url = "https://kapi.kakao.com/v2/api/talk/memo/default/send"
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": "Bearer " + usr_token,
+    }
+
+    data = {
+        "template_object": json.dumps(
+            {
+                "object_type": "text",
+                "text": "Alarm Deactivated\n" + now,
+                "link": {
+                    "web_url": "https://www.google.com",
+                    "mobile_web_url": "https://www.google.com",
+                },
+            }
+        )
+    }
+
+    # send kakao msg
+    response = requests.post(url, headers=headers, data=data)
+    print(response.status_code)
+    if response.json().get("result_code") == 0:
+        print("Message send succeeded.")
+    else:
+        print("Message send failed: " + str(response.json()))
+
+
 # Ring Alarm
 def alarm_led():
     global alarm_state
@@ -135,6 +171,8 @@ def alarm_led():
     GPIO.output(LED_PIN, False)
     if check_alert() == 1:
         alarm_state = 0
+        send_alarmdone()
+
 
 
 alarm_state = 0

@@ -25,7 +25,8 @@
 
     <table cellspacing="10" style="width: 90%; margin-left: auto; margin-right: auto;">
         <tr>
-            <img class="center_img" src="static/stream_img.jpg">
+            <!-- <img class="center_img" src="static/stream_img.jpg"> -->
+            <img class="center_img" src="{{ url_for('video_feed') }}">
         </tr>
         <tr>
             <td class="status_text" style="text-align: right;">Status: {{ state }}</td>
